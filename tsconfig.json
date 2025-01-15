@@ -19,8 +19,9 @@
     ],
     "paths": {
       "@/*": ["./*"]
-    }
+    },
+    "downlevelIteration": true,
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "app/api/classify-mood/route.js"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "app/api/classify-mood/route.ts", "app/api/spotify/callback"],
   "exclude": ["node_modules"]
 }
