@@ -17,10 +17,22 @@ export default function Home() {
     setRecommendations([])
 
     try {
-      // Simulate sentiment analysis (replace with actual API call)
-      const analyzeSentiment = () => Math.random() * 2 - 1 // Random number between -1 and 1
-      const sentimentScore = analyzeSentiment()
-      setSentiment(sentimentScore)
+      // sentiment analysis
+      const response = await fetch('/api/classify-mood', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ inputs: entry }), // Send the user's entry
+      });
+  
+      if (!response.ok) {
+        throw new Error('Failed to fetch sentiment analysis');
+      }
+  
+      const result = await response.json();
+  
+      // console.log("Original JSON:", result)
+      const sentimentScore = result.sentiment; 
+      setSentiment(sentimentScore);
 
       // Simulate song recommendations (replace with actual API call)
       const getSongRecommendations = (score: number) => {
