@@ -1,9 +1,35 @@
 import { NextResponse } from "next/server";
 
 type Emotion = {
-  label: string;
-  score: number;
-};
+    label: string;
+    score: number;
+  };
+
+type CoreEmotions = {
+    joy: number;
+    sadness: number;
+    anger: number;
+    surprise: number;
+    fear: number;
+    love: number;
+  };
+  
+  type SubEmotionScores = {
+    joy: number;
+    gratitude: number;
+    nostalgia: number;
+    depression: number;
+    longing: number;
+    frustration: number;
+    resentment: number;
+    disgust: number;
+    shock: number;
+    awe: number;
+    anxiety: number;
+    insecurity: number;
+    envy: number;
+    love: number;
+  };
 
 type PredictionsResponse = Emotion[][];
 
@@ -11,10 +37,32 @@ type RequestBody = {
   inputs: string;
 };
 
+
 type ResponseData = {
-  sentiment?: number;
+  subEmotionScores?: SubEmotionScores;
   error?: string;
 };
+
+function mapToSubEmotions(emotions: CoreEmotions): SubEmotionScores {
+    const scale = (value: number) => Math.max(0, Math.min(1, value));
+  
+    return {
+      joy: scale(1.0 * emotions.joy),
+      gratitude: scale(0.7 * emotions.joy + 0.3 * emotions.love),
+      nostalgia: scale(0.6 * emotions.sadness + 0.4 * emotions.joy),
+      depression: scale(1.0 * emotions.sadness),
+      longing: scale(0.6 * emotions.sadness + 0.5 * emotions.love),
+      frustration: scale(0.8 * emotions.anger + 0.2 * emotions.sadness),
+      resentment: scale(0.7 * emotions.anger + 0.3 * emotions.fear),
+      disgust: scale(0.7 * emotions.anger + 0.3 * emotions.surprise),
+      shock: scale(1.0 * emotions.surprise),
+      awe: scale(0.6 * emotions.surprise + 0.4 * emotions.joy),
+      anxiety: scale(1.0 * emotions.fear + 0.4 * emotions.sadness),
+      insecurity: scale(0.6 * emotions.fear + 0.4 * emotions.sadness),
+      envy: scale(0.7 * emotions.anger + 0.3 * emotions.sadness),
+      love: scale(1.0 * emotions.love)
+    };
+  }
 
 export async function POST(req: Request): Promise<NextResponse> {
   try {
@@ -27,7 +75,8 @@ export async function POST(req: Request): Promise<NextResponse> {
       throw new Error("Hugging Face API token is missing");
     }
 
-    const API_URL = "https://api-inference.huggingface.co/models/bhadresh-savani/distilbert-base-uncased-emotion";
+    const API_URL =
+      "https://api-inference.huggingface.co/models/bhadresh-savani/distilbert-base-uncased-emotion";
 
     // Make a POST request to the Hugging Face API
     const response = await fetch(API_URL, {
@@ -43,21 +92,20 @@ export async function POST(req: Request): Promise<NextResponse> {
       throw new Error(`Hugging Face API Error: ${response.statusText}`);
     }
 
-    const predictions: PredictionsResponse = await response.json();
+    const classifications: PredictionsResponse = await response.json();
 
-    // Process the response to calculate sentiment
-    const emotions = predictions[0]; // Assuming emotions are in the first array
+    const emotions: CoreEmotions = classifications[0].reduce(
+        (acc: CoreEmotions, { label, score }: Emotion) => {
+          (acc as any)[label] = score; 
+          return acc;
+        },
+        { joy: 0, sadness: 0, anger: 0, surprise: 0, fear: 0, love: 0 } as CoreEmotions 
+      );
 
-    const totalScore = emotions.reduce((sum, item) => sum + item.score, 0);
-    const averageScore = totalScore / emotions.length;
+    const subEmotionScores = mapToSubEmotions(emotions);
 
-    // Return the aggregated data
-    const result: ResponseData = {
-      sentiment: averageScore,
-    };
-
-    return NextResponse.json(result);
-  } catch (error: unknown) {
+    return NextResponse.json({ subEmotionScores });
+} catch (error: unknown) {
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
 
     console.error("Error:", errorMessage);

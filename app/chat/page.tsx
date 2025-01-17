@@ -4,7 +4,7 @@ import { useState } from 'react'
 
 export default function Home() {
   const [entry, setEntry] = useState('')
-  const [sentiment, setSentiment] = useState<number | null>(null)
+//   const [sentiment, setSentiment] = useState<number | null>(null)
   const [recommendations, setRecommendations] = useState<string[]>([])
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
@@ -13,12 +13,15 @@ export default function Home() {
     e.preventDefault()
     setIsLoading(true)
     setError('')
-    setSentiment(null)
+    // setSentiment(null)
     setRecommendations([])
 
     try {
       // sentiment analysis
-      const response = await fetch('/api/classify-mood', {
+      if (entry.length == 0) {
+        throw new Error('Please write a valid input');
+      }
+      let response = await fetch('/api/classify-mood', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ inputs: entry }), // Send the user's entry
@@ -28,20 +31,65 @@ export default function Home() {
         throw new Error('Failed to fetch sentiment analysis');
       }
   
-      const result = await response.json();
+      const scores = await response.json();
+      console.log(scores)
+
+
+    //   setSentiment(sentimentScore);
+      
+      response = await fetch("/api/spotify/top", {
+        method: "GET",
+      });
   
-      // console.log("Original JSON:", result)
-      const sentimentScore = result.sentiment; 
-      setSentiment(sentimentScore);
+      if (!response.ok) {
+        throw new Error(`Error fetching seeds: ${response.statusText}`);
+      }
+  
+      const seeds = await response.json();
+      console.log(seeds)
+
+      console.log(JSON.stringify({
+        scores,     
+        seeds       
+      }))
+
+
+      response = await fetch('/api/spotify/recommend', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          scores,     
+          seeds       
+        }), 
+      });
+      
+      const result = await response.json();
+
+      console.log(result)
+
+    //   // get seeds 
+    //   // get the songs 
+    //   response = await fetch("/api/spotify/recommendations", {
+    //     method: "GET",
+    //   });
+  
+    //   if (!response.ok) {
+    //     throw new Error("Failed to fetch recommendations");
+    //   }
+  
+    //   const data = await response.json();
+    //   console.log(data.tracks); // Handle track data as needed
+    //   return data.tracks;
 
       // Simulate song recommendations (replace with actual API call)
-      const getSongRecommendations = (score: number) => {
-        const happySongs = ['Happy - Pharrell Williams', 'Good Vibrations - The Beach Boys', 'Dancing Queen - ABBA']
-        const sadSongs = ['Someone Like You - Adele', 'Hurt - Johnny Cash', 'The Sound of Silence - Simon & Garfunkel']
-        return score > 0 ? happySongs : sadSongs
-      }
-      const recommendedSongs = getSongRecommendations(sentimentScore)
-      setRecommendations(recommendedSongs)
+
+    //   const getSongRecommendations = (score: number) => {
+    //     const happySongs = ['Happy - Pharrell Williams', 'Good Vibrations - The Beach Boys', 'Dancing Queen - ABBA']
+    //     const sadSongs = ['Someone Like You - Adele', 'Hurt - Johnny Cash', 'The Sound of Silence - Simon & Garfunkel']
+    //     return score > 0 ? happySongs : sadSongs
+    //   }
+    //   const recommendedSongs = getSongRecommendations(sentimentScore)
+    //   setRecommendations(recommendedSongs)
     } catch (err) {
       setError('An error occurred. Please try again.')
       console.error(err)
@@ -76,12 +124,12 @@ export default function Home() {
         </button>
       </form>
       {error && <p style={{ color: 'red', marginTop: '10px' }}>{error}</p>}
-      {sentiment !== null && (
+      {/* {sentiment !== null && (
         <div style={{ marginTop: '20px' }}>
           <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '10px' }}>Sentiment Analysis</h2>
           <p>Your mood seems to be: {sentiment > 0 ? 'Positive' : 'Negative'} ({sentiment.toFixed(2)})</p>
         </div>
-      )}
+      )} */}
       {recommendations.length > 0 && (
         <div style={{ marginTop: '20px' }}>
           <h2 style={{ fontSize: '18px', fontWeight: 'bold', marginBottom: '10px' }}>Recommended Songs:</h2>

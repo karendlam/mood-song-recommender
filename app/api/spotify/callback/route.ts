@@ -37,15 +37,15 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: "Failed to exchange code for tokens" }, { status: 500 });
   }
 
-  // const tokens = await tokenResponse.json();
+  const tokens = await tokenResponse.json();
 
   // Store the access token in a cookie
   const response = NextResponse.redirect("http://localhost:3000/chat");
-  // response.cookies.set("access_token", tokens.access_token, {
-  //   httpOnly: true, // Prevent JavaScript from accessing the cookie
-  //   secure: process.env.NODE_ENV === "production", // Use secure cookies in production
-  //   path: "/", // Make the cookie available to the entire site
-  // });
+  response.cookies.set("access_token", tokens.access_token, {
+    httpOnly: true, // Prevent JavaScript from accessing the cookie
+    secure: process.env.NODE_ENV === "production", // Use secure cookies in production
+    path: "/", // Make the cookie available to the entire site
+  });
 
   return response;
 }

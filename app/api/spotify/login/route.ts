@@ -10,10 +10,10 @@ function generateCodeVerifier(length: number): string {
 async function generateCodeChallenge(verifier: string): Promise<string> {
   const data = new TextEncoder().encode(verifier);
   const digest = await crypto.subtle.digest("SHA-256", data);
-  return btoa(String.fromCharCode.apply(null, [...new Uint8Array(digest)]))
-  .replace(/\+/g, '-')
-  .replace(/\//g, '_')
-  .replace(/=+$/, '');
+  return btoa(String.fromCharCode(...new Uint8Array(digest)))
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
 }
 
 export async function GET() {
@@ -28,7 +28,7 @@ export async function GET() {
       client_id: SPOTIFY_CLIENT_ID,
       response_type: "code",
       redirect_uri: SPOTIFY_REDIRECT_URI,
-      scope: "user-read-private user-read-email",
+      scope: "user-top-read user-read-private playlist-read-private user-read-email",
       code_challenge_method: "S256",
       code_challenge: challenge,
     })}`
